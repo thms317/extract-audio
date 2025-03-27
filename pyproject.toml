@@ -1,0 +1,123 @@
+[project]
+name = "extract-audio"
+version = "0.1.0"
+description = "Extract audio."
+authors = [
+    { name = "Thomas Brouwer", email = "notifications@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "bs4>=0.0.2",
+    "requests>=2.32.3",
+    "zotify",
+]
+
+[tool.uv]
+package = true
+dev-dependencies = [
+    "bandit>=1.8.3",
+    "mkdocs-material>=9.6.7",
+    "mkdocs>=1.6.1",
+    "mypy>=1.15.0",
+    "pdoc3>=0.11.5",
+    "pre-commit>=4.1.0",
+    "pydoclint>=0.5.8",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest>=8.3.5",
+    "ruff>=0.9.10",
+    "sqlfluff>=3.3.1",
+]
+
+[tool.uv.sources]
+zotify = { git = "https://zotify.xyz/zotify/zotify.git" }
+
+[project.scripts]
+main = "extractor.main:main"
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-include = ["*.ipynb"]
+extend-exclude = ["scratch"]
+builtins = ["dbutils", "display", "spark"]
+
+[tool.ruff.lint]
+pydocstyle.convention = "numpy"
+external = ["DOC"]
+select = ["ALL"]
+ignore = [
+    "D203",     # "One blank line required before class docstring." Should be disabled by default.
+    "D213",     # "Multi-line docstring summary should start at the second line." Should be disabled by default.
+    "E501",     # "Line too long." Sometimes my comments are a bit longer.
+    "E731",     # "Do not assign a lambda expression, use a def." Needed for spark UDFs.
+    "ERA001",   # "Found commented out code."
+    "FBT001",   # "Boolean positional arg in function definition.
+    "FBT002",   # "Boolean default value in function definition."
+    "FBT003",   # "Boolean positional value in function call." This is common in spark.
+    "ISC001",   # "Implicit string concatenation." Ignored since it conflicts with the formatter.
+    "N812",     # "Lowercase `functions` imported as non-lowercase." Pretty standard for spark programming.
+    "T201",     # "`print` found."
+    # Nitpicky exceptions - comment out when productionalizing your code
+    "BLE001",   # Do not catch blind exception: `Exception`
+    "D400",     # First line should end with a period
+    "D401",     # First line of docstring should be in imperative mood
+    "PD901",    # Avoid using the generic variable name `df` for DataFrames
+    "PLR2004",  # "Magic value used in comparison, consider replacing with a constant variable."
+    "TRY003"    #  Avoid specifying long messages outside the exception class
+]
+unfixable = [
+    "F401",     # "Unused import." Disabled since it makes linting/formatting notebooks messy and impossible.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/**/*.py" = [
+    "D100",     # "Missing docstring in public module." Not needed for Databricks notebooks.
+    "INP001",   # "Part of an implicit namespace package. Add an `__init__.py`." Not needed for Databricks notebooks.
+]
+"tests/*.py" = [
+    "PLR2004",  # "Magic value used in comparison, consider replacing with a constant variable."
+    "S101",     # "Use of `assert` detected."
+
+]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = ["src", ".vscode"]
+strict = true
+disallow_untyped_decorators = false
+exclude = "scratch"
+
+[[tool.mypy.overrides]]
+module = ["dbutils", "display", "spark"]
+ignore_missing_imports = true
+disable_error_code = "name-defined"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.pydoclint]
+style = "numpy"
+exclude = ".git|.venv|scratch"
+
+[tool.bandit]
+targets = ["src"]
+skips = []
+exclude_dirs = [".venv", "archive", "scratch", "tests"]
+
+[tool.sqlfluff.core]
+dialect = "databricks"
+templater = "jinja"
+max_line_length = 120
+ignore = "parsing"
+
+[tool.sqlfluff.indentation]
+indented_joins = false
+indented_using_on = true
+template_blocks_indent = false
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "upper"
