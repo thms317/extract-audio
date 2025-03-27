@@ -1,0 +1,49 @@
+# This workflow does the following things:
+# 1. Analyze commit messages and determine the next version number based on conventional commits
+# 2. Generate a CHANGELOG.md file with all changes since the last release
+# 3. Update the version in pyproject.toml
+# 4. Create a new git tag with the version
+# 5. Create a GitHub release with the changelog
+# 6. Push all changes back to the repository
+
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'     # Ensure you're on the main branch
+          fetch-depth: 0  # Fetch all history and tags
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Semantic Release
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github
+
+      - name: Run Semantic Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
