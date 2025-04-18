@@ -1,18 +1,20 @@
+"""Module for extracting and downloading audio files from web archives."""
+
 import argparse
-import os
 import random
 import re
 import time
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
 
-def find_mp3_urls_from_archive(archive_url):
+def find_mp3_urls_from_archive(archive_url: str) -> list[str]:
     """
-    Finds and lists potential MP3 URLs within an archived webpage from the Wayback Machine.
+    Find and list potential MP3 URLs within an archived webpage from the Wayback Machine.
+
     Attempts to construct working Wayback Machine URLs, avoiding double prefixes.
 
     Args:
@@ -23,7 +25,7 @@ def find_mp3_urls_from_archive(archive_url):
         A list of unique MP3 URLs found on the page, adjusted for Wayback Machine.
     """
     try:
-        response = requests.get(archive_url)
+        response = requests.get(archive_url, timeout=30)
         response.raise_for_status()  # Raise an exception for bad status codes
 
         soup = BeautifulSoup(response.content, "html.parser")
@@ -46,9 +48,9 @@ def find_mp3_urls_from_archive(archive_url):
                 if src:
                     mp3_urls.add(construct_wayback_url(src, archive_url, wayback_timestamp, "im_"))
 
-            # Also check the src directly on the <audio> tag itself
-            audio_src = audio_tag.get("src")
-            if audio_src and audio_src.lower().endswith(".mp3"):
+            # Check audio tag src attribute
+            audio_src = audio_tag.get("src")  # type: ignore[attr-defined]
+            if audio_src and isinstance(audio_src, str) and audio_src.lower().endswith(".mp3"):
                 mp3_urls.add(
                     construct_wayback_url(audio_src, archive_url, wayback_timestamp, "oe_"),
                 )
@@ -60,20 +62,18 @@ def find_mp3_urls_from_archive(archive_url):
             if href:
                 mp3_urls.add(construct_wayback_url(href, archive_url, wayback_timestamp, "im_"))
 
-        return sorted(list(mp3_urls))
+        return sorted(mp3_urls)
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching the URL: {e}")
         return []
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"An error occurred while parsing the HTML: {e}")
         return []
 
 
-def construct_wayback_url(url, archive_url, timestamp, type_prefix):
-    """
-    Constructs a Wayback Machine URL, avoiding double prefixes.
-    """
+def construct_wayback_url(url: str, archive_url: str, timestamp: str, type_prefix: str) -> str:
+    """Construct a Wayback Machine URL, avoiding double prefixes."""
     if not timestamp:
         return url  # Return original URL if timestamp is missing
 
@@ -95,16 +95,19 @@ def construct_wayback_url(url, archive_url, timestamp, type_prefix):
     return f"https://web.archive.org/web/{timestamp}{type_prefix}/{url}"
 
 
-def download_mp3(
-    url,
-    destination_dir,
-    filename=None,
-    max_retries=3,
-    delay_between_retries=5,
-    force_download=False,
-):
+def download_mp3(  # noqa: C901, PLR0912, PLR0913
+    url: str,
+    destination_dir: str,
+    filename: str | None = None,
+    max_retries: int = 3,
+    delay_between_retries: int = 5,
+    force_download: bool = False,
+) -> tuple[bool, str, None] | tuple[bool, None, str]:
     """
-    Downloads an MP3 file from the given URL and saves it to the specified destination.
+    Download an MP3 file from the given URL and save it to the specified destination.
+
+    Attempts to construct working Wayback Machine URLs, avoiding double prefixes.
+
     Includes retry logic with exponential backoff for handling connection issues.
 
     Args:
@@ -123,24 +126,25 @@ def download_mp3(
         error_message: Description of error (None if successful)
     """
     # Create destination directory if it doesn't exist
-    os.makedirs(destination_dir, exist_ok=True)
+    Path(destination_dir).mkdir(parents=True, exist_ok=True)
 
     # Determine filename if not provided
     if not filename:
         # Extract filename from URL
         parsed_url = urlparse(url)
-        filename = os.path.basename(parsed_url.path)
+        filename = Path(parsed_url.path).name
 
         # Ensure filename ends with .mp3
         if not filename.lower().endswith(".mp3"):
             filename += ".mp3"
 
-    filepath = os.path.join(destination_dir, filename)
+    filepath = Path(destination_dir) / filename
+    filepath_str = str(filepath)
 
     # Check if file already exists and is not empty
-    if not force_download and os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-        print(f"File already exists at {filepath}, skipping download.")
-        return True, filepath, None
+    if not force_download and filepath.exists() and filepath.stat().st_size > 0:
+        print(f"File already exists at {filepath_str}, skipping download.")
+        return True, filepath_str, None
 
     for attempt in range(max_retries):
         try:
@@ -163,7 +167,7 @@ def download_mp3(
             downloaded = 0
 
             # Download file
-            with open(filepath, "wb") as f:
+            with filepath.open("wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
@@ -178,10 +182,11 @@ def download_mp3(
             print()  # Newline after progress report
 
             # Verify file was downloaded successfully
-            if os.path.getsize(filepath) > 0:
-                return True, filepath, None
-            os.remove(filepath)  # Remove empty file
-            raise Exception("Downloaded file is empty")
+            if filepath.stat().st_size > 0:
+                return True, filepath_str, None
+            # Remove empty file
+            filepath.unlink()
+            return False, None, "Downloaded file is empty"  # noqa: TRY300
 
         except requests.exceptions.RequestException as e:
             error_msg = f"Network error: {e!s}"
@@ -189,17 +194,19 @@ def download_mp3(
 
             if attempt < max_retries - 1:
                 # Calculate exponential backoff with jitter
+                # Using random here is fine since it's not for cryptographic purposes
                 sleep_time = delay_between_retries * (2**attempt) + random.uniform(0, 2)
                 print(f"Retrying in {sleep_time:.2f} seconds...")
                 time.sleep(sleep_time)
             else:
                 return False, None, error_msg
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error_msg = f"Error downloading {url}: {e!s}"
             print(f"Attempt {attempt + 1}/{max_retries} failed: {error_msg}")
 
             if attempt < max_retries - 1:
+                # Using random here is fine since it's not for cryptographic purposes
                 sleep_time = delay_between_retries * (2**attempt) + random.uniform(0, 2)
                 print(f"Retrying in {sleep_time:.2f} seconds...")
                 time.sleep(sleep_time)
@@ -219,7 +226,12 @@ if __name__ == "__main__":
         default="https://web.archive.org/web/20210418151905/https://www.hoorspelen.eu/producties/hsp-p/pluk-van-de-petteflet.html",
         help="Archive URL to search for MP3s",
     )
-    parser.add_argument("-d", "--download", action="store_true", help="Download found MP3 files")
+    parser.add_argument(
+        "-d",
+        "--download",
+        action="store_true",
+        help="Download found MP3 files",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -279,7 +291,7 @@ if __name__ == "__main__":
 
                 # Add delay between downloads to avoid rate limiting
                 if i < len(mp3_links):
-                    # Add some randomness to the wait time
+                    # Using random here is fine since it's not for cryptographic purposes
                     wait_time = args.wait + random.uniform(0, 1)
                     print(f"Waiting {wait_time:.2f} seconds before next download...")
                     time.sleep(wait_time)

@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.12, <4.0"
 
 [[package]]
@@ -234,6 +235,8 @@ source = { editable = "." }
 dependencies = [
     { name = "bs4" },
     { name = "requests" },
+    { name = "tqdm" },
+    { name = "types-requests" },
     { name = "zotify" },
 ]
 
@@ -257,7 +260,9 @@ dev = [
 requires-dist = [
     { name = "bs4", specifier = ">=0.0.2" },
     { name = "requests", specifier = ">=2.32.3" },
-    { name = "zotify", git = "https://zotify.xyz/zotify/zotify.git" },
+    { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "types-requests", specifier = ">=2.32.0.20250328" },
+    { name = "zotify", git = "https://github.com/bgeorgakas/zotify.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -1068,6 +1073,18 @@ wheels = [
 ]
 
 [[package]]
+name = "types-requests"
+version = "2.32.0.20250328"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/7d/eb174f74e3f5634eaacb38031bbe467dfe2e545bc255e5c90096ec46bc46/types_requests-2.32.0.20250328.tar.gz", hash = "sha256:c9e67228ea103bd811c96984fac36ed2ae8da87a36a633964a21f199d60baf32", size = 22995 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/15/3700282a9d4ea3b37044264d3e4d1b1f0095a4ebf860a99914fd544e3be3/types_requests-2.32.0.20250328-py3-none-any.whl", hash = "sha256:72ff80f84b15eb3aa7a8e2625fffb6a93f2ad5a0c20215fc1dcfa61117bcb2a2", size = 20663 },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1180,7 +1197,7 @@ wheels = [
 [[package]]
 name = "zotify"
 version = "0.6.14"
-source = { git = "https://zotify.xyz/zotify/zotify.git#08d844fe3e644ae6cd9bea34a3b4982e61129f33" }
+source = { git = "https://github.com/bgeorgakas/zotify.git#8c7f25f057c859ad2f4adf9599b389c39c86754e" }
 dependencies = [
     { name = "ffmpy" },
     { name = "librespot" },
