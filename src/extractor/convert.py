@@ -6,6 +6,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -122,7 +123,7 @@ def copy_audio_files(source_dir: str, target_dir: str, extension: str = ".mp3") 
     return copied_count
 
 
-def main() -> None:
+def main() -> int:
     """Convert OGG files to MP3 and manage audio files."""
     parser = argparse.ArgumentParser(description="Convert OGG files to MP3 and manage audio files")
     parser.add_argument(
@@ -150,7 +151,7 @@ def main() -> None:
 
     if not files_to_convert:
         print("No unconverted OGG files found!")
-        return
+        return 1
 
     print(f"Converting {len(files_to_convert)} OGG files to MP3...")
 
@@ -170,10 +171,18 @@ def main() -> None:
         print(f"\nCopying {args.extension} files to {args.copy_to}...")
         copy_audio_files(args.directory, args.copy_to, args.extension)
 
+    return 0
+
 
 if __name__ == "__main__":
-    copy_audio_files(
-        "/Users/thomasbrouwer/code/extract-audio/extracted/Noah/Zotify Music",
-        "/Users/thomasbrouwer/code/extract-audio/extracted/Noah/converted",
-        extension=".mp3",
-    )
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\nOperation canceled by user")
+        sys.exit(1)
+
+    # copy_audio_files(
+    #     "/Users/thomasbrouwer/code/extract-audio/extracted/v2",
+    #     "/Users/thomasbrouwer/code/extract-audio/extracted/converted",
+    #     extension=".mp3",
+    # )
