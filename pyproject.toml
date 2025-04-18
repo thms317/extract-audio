@@ -12,6 +12,7 @@ dependencies = [
     "requests>=2.32.3",
     "tqdm>=4.67.1",
     "types-requests>=2.32.0.20250328",
+    "types-tqdm>=4.67.0.20250417",
     "zotify",
 ]
 
@@ -66,7 +67,7 @@ ignore = [
     # "D400",     # First line should end with a period
     # "D401",     # First line of docstring should be in imperative mood
     # "PD901",    # Avoid using the generic variable name `df` for DataFrames
-    # "PLR2004",  # "Magic value used in comparison, consider replacing with a constant variable."
+    "PLR2004",  # "Magic value used in comparison, consider replacing with a constant variable."
     # "TRY003"    #  Avoid specifying long messages outside the exception class
     # Project-specific exceptions
     "S311",         # "Standard pseudo-random generators are not suitable for cryptographic purposes
