@@ -1,4 +1,4 @@
-.PHONY: install setup clean test tree docs
+.PHONY: install setup clean test tree docs lint
 
 .DEFAULT_GOAL := setup
 
@@ -101,20 +101,24 @@ test:
 	@uv sync
 	@uv run pytest -v tests --cov=src --cov-report=term
 
-deploy: deploy_dev
-
-
-
 tree:
 	@echo "Generating project tree..."
 	@tree -I '.venv|__pycache__|archive|scratch|.databricks|.ruff_cache|.mypy_cache|.pytest_cache|.git|htmlcov|site|dist|.DS_Store|fixtures' -a
 
 docs:
-	@echo "Running tests and generating coverage data..."
-	@. .venv/bin/activate
-	@uv run pytest -v tests --cov=src --junitxml=docs/tests/coverage/pytest_coverage.xml
-	# @uv run coverage xml -o docs/tests/coverage/coverage.xml
 	@echo "Generating HTML documentation..."
-	@uv run pdoc --html src/extractor -o docs/api --force
-	# @uv run pdoc --html tests -o docs/api --force
 	@uv run mkdocs serve
+
+lint:
+	@echo "Linting the project..."
+	@uv sync
+	@uv build
+	@echo "Running ruff..."
+	@uv run ruff check .
+	@echo "Running mypy..."
+	@uv run mypy .
+	@echo "Running pydoclint..."
+	@uv run pydoclint .
+	@echo "Running bandit..."
+	@uv run bandit --configfile=pyproject.toml --severity-level=medium -r .
+	@echo "Linting completed successfully!"
