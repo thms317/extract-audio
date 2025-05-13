@@ -88,7 +88,7 @@ def list_existing_files(
 ) -> list[str]:
     """List all audio files in the directory."""
     if extensions is None:
-        extensions = [".ogg", ".mp3"]
+        extensions = [".ogg", ".mp3", ".jpg", ".jpeg", ".png"]
 
     existing_files: list[str] = []
     for root, _, files in os.walk(directory):
@@ -167,7 +167,7 @@ def download_spotify_content(
     target_dir: str = DEFAULT_TARGET_DIR,
     bulk_wait_time: int = 30,
     suppress_lyrics_errors: bool = True,
-    download_format: str = "ogg",
+    download_format: str = "mp3",
 ) -> bool:
     """Download content from Spotify URL using Zotify."""
     print(f"Downloading from: {url}")
@@ -201,10 +201,12 @@ def download_spotify_content(
     # Run Zotify command - just use the default location for now
     cmd = ["zotify", url, "--bulk-wait-time", str(bulk_wait_time)]
 
-    # Add format parameter if not default ogg
-    if download_format != "ogg":
-        cmd.extend(["--download-format", download_format])
-        print(f"Using direct {download_format.upper()} conversion via Zotify")
+    # Add format parameter
+    cmd.extend(["--download-format", download_format])
+    if download_format == "mp3":
+        print("Using direct MP3 conversion via Zotify")
+    else:
+        print(f"Using {download_format.upper()} format instead of MP3")
 
     print("\nStarting Zotify download...")
     print("⏱️  Downloading in progress, will display real-time updates below:")
@@ -221,7 +223,7 @@ def download_spotify_content(
         )
 
         last_line = ""
-        converting_progress = False
+        last_action = None  # Track the last action type
 
         # Read and display output in real-time
         while True:
@@ -250,45 +252,33 @@ def download_spotify_content(
                 continue
 
             if clean_line:
-                # Identify progress lines that should update in place
-                is_progress_line = False
+                # Special handling for preparation and conversion status lines
+                if clean_line.startswith("[") and ("●" in clean_line or "∙" in clean_line):
+                    # Always print these on a new line
+                    if last_line:
+                        print()  # End previous line
+                    print(clean_line)
+                    last_line = ""
+                    continue
 
-                # Check for various progress indicators
-                if (
-                    "%" in clean_line  # Percentage indicator
-                    or any(
-                        x in clean_line for x in ["⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-                    )  # Spinner characters
-                    or (
-                        "track" in clean_line
-                        and ("Preparing" in clean_line or "Converting" in clean_line)
-                    )  # Progress status
-                    or (
-                        ": " in clean_line and any(x in clean_line for x in ["kB/s", "MB/s", "B/s"])
-                    )  # Download speed
-                    or
-                    # Song download pattern matching (like "PinkPantheress - Stars: 15%|█▌")
-                    (" - " in clean_line and ": " in clean_line and "%" in clean_line)
-                    or
-                    # Preparation indicators with dots
-                    (clean_line.startswith("[") and ("●" in clean_line or "∙" in clean_line))
-                    or
-                    # Converting file progress
-                    ("Converting file" in clean_line)
-                ):
-                    is_progress_line = True
-
-                # Don't use our custom converting animation - let Zotify's show
-                if is_progress_line:
+                # For download progress bars (track downloading)
+                if "%" in clean_line and ("|" in clean_line or "B/s" in clean_line):
                     # Update in place
                     print(f"\r{clean_line}", end="")
                     last_line = clean_line
-                else:
-                    # Regular message - print on new line
-                    if last_line:
-                        print()  # End the previous progress line
-                        last_line = ""
-                    print(clean_line)
+                    continue
+
+                # For other progress indicators (spinner characters)
+                if any(x in clean_line for x in ["⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]):
+                    print(f"\r{clean_line}", end="")
+                    last_line = clean_line
+                    continue
+
+                # For all other messages, print on a new line
+                if last_line:
+                    print()  # End previous line
+                print(clean_line)
+                last_line = ""
 
         # Make sure we end with a newline after the last progress update
         if last_line:
@@ -306,43 +296,95 @@ def download_spotify_content(
 
     # Now check what new files were downloaded to the default location
     if os.path.exists(default_zotify_dir):
-        current_in_default = set(list_existing_files(default_zotify_dir))
-        new_files_in_default = current_in_default - existing_in_default
+        # Get audio files first
+        audio_extensions = [".ogg", ".mp3"]
+        image_extensions = [".jpg", ".jpeg", ".png"]
 
-        if new_files_in_default:
+        # Check for new audio files
+        current_audio_files = set(
+            list_existing_files(default_zotify_dir, extensions=audio_extensions),
+        )
+        new_audio_files = current_audio_files - existing_in_default
+
+        # Check for all image files in Zotify's directory
+        all_image_files = set()
+        for root, _, files in os.walk(default_zotify_dir):
+            for file in files:
+                if any(file.lower().endswith(ext) for ext in image_extensions):
+                    image_path = os.path.join(root, file)
+                    all_image_files.add(image_path)
+
+        # Log about found files
+        if new_audio_files:
             print(
-                f"✅ Download successful! Found {len(new_files_in_default)} new files in Zotify's default location.",
+                f"✅ Download successful! Found {len(new_audio_files)} new audio files in Zotify's default location.",
             )
 
-            # Move new files to target directory
+            # Move new audio files to target directory
             print(f"📦 Moving files to target directory: {target_dir}")
-            for file_path in new_files_in_default:
-                rel_path = os.path.relpath(file_path, default_zotify_dir)
+            moved_audio_files = 0
+            moved_image_files = 0
+
+            # First move the audio files and remember their directories
+            artist_album_dirs = set()  # Keep track of artist/album directories
+
+            for audio_file in new_audio_files:
+                rel_path = os.path.relpath(audio_file, default_zotify_dir)
                 dest_path = os.path.join(target_dir, rel_path)
+
+                # Remember the artist/album directory for this audio file
+                audio_dir = os.path.dirname(audio_file)
+                artist_album_dirs.add(audio_dir)
 
                 # Make sure destination directory exists
                 dest_dir = os.path.dirname(dest_path)
                 os.makedirs(dest_dir, exist_ok=True)
 
-                # Move file with shutil to handle cross-device moves
+                # Move audio file
                 import shutil
 
                 try:
-                    shutil.move(file_path, dest_path)
+                    shutil.move(audio_file, dest_path)
                     print(f"  ↳ Moved: {rel_path}")
+                    moved_audio_files += 1
                 except Exception as e:
                     print(f"  ❌ Error moving {rel_path}: {e}")
+
+            # Now look for and move any image files in the same artist/album directories
+            for image_file in all_image_files:
+                image_dir = os.path.dirname(image_file)
+
+                # If the image is in an artist/album directory we saw, or it's named "cover.*"
+                if image_dir in artist_album_dirs or os.path.basename(image_file).startswith(
+                    "cover.",
+                ):
+                    rel_path = os.path.relpath(image_file, default_zotify_dir)
+                    dest_path = os.path.join(target_dir, rel_path)
+
+                    # Make sure destination directory exists
+                    dest_dir = os.path.dirname(dest_path)
+                    os.makedirs(dest_dir, exist_ok=True)
+
+                    # Move image file
+                    try:
+                        shutil.move(image_file, dest_path)
+                        print(f"  ↳ Moved cover art: {os.path.basename(image_file)}")
+                        moved_image_files += 1
+                    except Exception as e:
+                        print(f"  ❌ Error moving cover art {os.path.basename(image_file)}: {e}")
 
             # Now check what's in the target directory
             current_in_target = set(list_existing_files(target_dir))
             new_files_in_target = current_in_target - existing_in_target
 
             if new_files_in_target:
-                print(f"\n✨ Successfully moved {len(new_files_in_target)} files to {target_dir}")
+                print(
+                    f"\n✨ Successfully moved {moved_audio_files} audio files and {moved_image_files} cover images to {target_dir}",
+                )
                 return True
             print("\n⚠️ Failed to move files to target directory")
             return False
-        print("⚠️ No new files found in Zotify's default location. Something went wrong.")
+        print("⚠️ No new audio files found in Zotify's default location. Something went wrong.")
         return False
     print("❓ Default Zotify directory not found.")
     return False
@@ -428,12 +470,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Spotify Music Downloader and Converter",
         epilog="""
-Note: The download process involves two separate conversions:
-1. Zotify converts from Spotify's format to OGG (happens during download)
-2. This script converts OGG to MP3 (happens after download)
-
-If you only need OGG files, use --keep-ogg to skip the second conversion.
-If you want MP3 files faster, use --direct-mp3 to have Zotify convert directly to MP3.
+Note: By default, files are directly downloaded as MP3 using Zotify's built-in conversion.
+Alternative options:
+- Use --use-ogg to download as OGG first, then convert to MP3 (two-step process)
+- Use --keep-ogg to download as OGG and skip MP3 conversion entirely
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -463,17 +503,17 @@ If you want MP3 files faster, use --direct-mp3 to have Zotify convert directly t
     parser.add_argument(
         "--keep-ogg",
         action="store_true",
-        help="Keep files in OGG format and skip MP3 conversion (faster)",
+        help="Download as OGG format and skip MP3 conversion entirely",
     )
     parser.add_argument(
-        "--direct-mp3",
+        "--use-ogg",
         action="store_true",
-        help="Use Zotify's built-in conversion to download directly to MP3 (fastest for MP3)",
+        help="Use two-step process: download as OGG first, then convert to MP3",
     )
     parser.add_argument(
         "--remove-originals",
         action="store_true",
-        help="Remove original .ogg files after successful conversion to MP3",
+        help="Remove original .ogg files after conversion to MP3 (only with --use-ogg)",
     )
     parser.add_argument(
         "--show-lyrics-errors",
@@ -484,8 +524,8 @@ If you want MP3 files faster, use --direct-mp3 to have Zotify convert directly t
     args = parser.parse_args()
 
     # Check for conflicting args
-    if args.keep_ogg and args.direct_mp3:
-        print("Error: Cannot use both --keep-ogg and --direct-mp3 options")
+    if args.keep_ogg and args.use_ogg:
+        print("Error: Cannot use both --keep-ogg and --use-ogg options")
         parser.print_help()
         return 1
 
@@ -514,7 +554,7 @@ If you want MP3 files faster, use --direct-mp3 to have Zotify convert directly t
         print(f"Content type: {content_type}")
 
         # Determine download format
-        download_format = "mp3" if args.direct_mp3 else "ogg"
+        download_format = "ogg" if (args.keep_ogg or args.use_ogg) else "mp3"
 
         success = download_spotify_content(
             args.url,
@@ -527,8 +567,8 @@ If you want MP3 files faster, use --direct-mp3 to have Zotify convert directly t
             print("Download failed!")
             return 1
 
-    # Skip OGG to MP3 conversion if using direct-mp3 or keep-ogg options
-    if not args.keep_ogg and not args.direct_mp3:
+    # Convert OGG to MP3 if using two-step process
+    if args.use_ogg or (args.skip_download and not args.keep_ogg):
         # Convert OGG files to MP3
         print("\nConverting OGG files to MP3...")
         convert_all_ogg_files(target_dir, args.remove_originals)
