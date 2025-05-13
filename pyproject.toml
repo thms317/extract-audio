@@ -18,19 +18,17 @@ dependencies = [
 
 [tool.uv]
 package = true
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "bandit>=1.8.3",
-    "mkdocs-material>=9.6.7",
-    "mkdocs>=1.6.1",
     "mypy>=1.15.0",
-    "pdoc3>=0.11.5",
     "pre-commit>=4.1.0",
-    "pydoclint>=0.5.8",
+    "pydoclint>=0.6.6",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "pytest>=8.3.5",
-    "ruff>=0.9.10",
-    "sqlfluff>=3.3.1",
+    "ruff>=0.11.9",
 ]
 
 [tool.uv.sources]
