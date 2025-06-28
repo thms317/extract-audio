@@ -80,7 +80,6 @@ clean:
 	@echo -e "Cleaning up project artifacts..."
 	@find . \( \
 		-name ".pytest_cache" -o \
-		-name ".mypy_cache" -o \
 		-name ".ruff_cache" -o \
 		-name "dist" -o \
 		-name "__pycache__" -o \
@@ -109,8 +108,8 @@ lint:
 	@uv build
 	@echo "Running ruff..."
 	@uv run ruff check .
-	@echo "Running mypy..."
-	@uv run mypy .
+	@echo "Running ty..."
+	@uv run ty check .
 	@echo "Running pydoclint..."
 	@uv run pydoclint .
 	@echo "Running bandit..."
