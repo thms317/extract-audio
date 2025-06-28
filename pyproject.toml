@@ -1,6 +1,6 @@
 [project]
 name = "extract-audio"
-version = "1.0.0"
+version = "1.0.1"
 description = "Extract audio."
 authors = [
     { name = "Thomas Brouwer", email = "notifications@example.com" },

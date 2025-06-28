@@ -1,3 +1,12 @@
+## [1.0.1](https://github.com/thms317/extract-audio/compare/v1.0.0...v1.0.1) (2025-06-28)
+
+
+### Bug Fixes
+
+* **spotify:** further improve UX of spotify scraper ([30410e6](https://github.com/thms317/extract-audio/commit/30410e6750e22b9f6d96608a9688c65032fe5730))
+* **spotify:** improve UX of spotify scraper ([a2ce4fc](https://github.com/thms317/extract-audio/commit/a2ce4fc4c30f604e515bd2947b4bf7a29b5d1a13))
+* UX improvements ([51a3335](https://github.com/thms317/extract-audio/commit/51a33358f6e06e6241e181e51cb7fd6a93a0b5d6))
+
 # 1.0.0 (2025-04-18)
 
 
