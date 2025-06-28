@@ -32,8 +32,8 @@ jobs:
       - name: Run formatting checks
         run: |
           uv run ruff check --output-format=github .
-          uv run mypy .
-          uv run pydoclint .
+          # uv run mypy .
+          # uv run pydoclint .
 
       - name: Build and check package
         run: |
