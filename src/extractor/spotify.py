@@ -35,52 +35,6 @@ def get_spotify_content_type(url: str) -> str | None:
     return None
 
 
-# def configure_zotify(target_dir: str) -> bool:
-#     """Configure Zotify to use the specified target directory."""
-#     # Find Zotify config location
-#     if platform.system() == "Windows":
-#         config_dir = os.path.join(os.environ.get("APPDATA", ""), "Zotify")
-#     else:
-#         config_dir = os.path.expanduser("~/.config/zotify")
-
-#     config_file = os.path.join(config_dir, "config.json")
-
-#     # Check if config exists
-#     if not os.path.exists(config_file):
-#         try:
-#             # Run zotify once to generate default config
-#             subprocess.run(["zotify", "--help"], check=True, capture_output=True)
-#         except subprocess.CalledProcessError as e:
-#             print(f"Error initializing Zotify: {e}")
-#             return False
-
-#         if not os.path.exists(config_file):
-#             print(f"Could not find or create Zotify config at {config_file}")
-#             return False
-
-#     # Now read and modify the config
-#     try:
-#         import json
-
-#         with open(config_file) as f:
-#             config = json.load(f)
-
-#         # Update output directory
-#         config["song_directory"] = target_dir
-#         config["album_directory"] = target_dir
-#         config["playlist_directory"] = target_dir
-
-#         # Save updated config
-#         with open(config_file, "w") as f:
-#             json.dump(config, f, indent=4)
-
-#         print(f"Zotify configured to use target directory: {target_dir}")
-#         return True
-
-#     except Exception as e:
-#         print(f"Error updating Zotify config: {e}")
-#         return False
-
 
 def list_existing_files(
     directory: str,
@@ -132,7 +86,7 @@ def get_spotify_track_count(url: str) -> int | None:
         # Parse the output to find track count
         if content_type == "track":
             return 1
-        if content_type == "album" or content_type == "playlist":
+        if content_type in {"album", "playlist"}:
             # Try different patterns that might appear in Zotify output
             patterns = [
                 r"Tracks: (\d+)",
@@ -168,6 +122,8 @@ def download_spotify_content(
     bulk_wait_time: int = 30,
     suppress_lyrics_errors: bool = True,
     download_format: str = "mp3",
+    keep_library: bool = True,
+    flat_structure: bool = True,
 ) -> bool:
     """Download content from Spotify URL using Zotify."""
     print(f"Downloading from: {url}")
@@ -223,7 +179,6 @@ def download_spotify_content(
         )
 
         last_line = ""
-        last_action = None  # Track the last action type
 
         # Read and display output in real-time
         while True:
@@ -320,69 +275,127 @@ def download_spotify_content(
                 f"✅ Download successful! Found {len(new_audio_files)} new audio files in Zotify's default location.",
             )
 
-            # Move new audio files to target directory
-            print(f"📦 Moving files to target directory: {target_dir}")
-            moved_audio_files = 0
-            moved_image_files = 0
+            # Find all cover images in these directories
+            artist_album_dirs = {os.path.dirname(audio_file) for audio_file in new_audio_files}
+            related_images = set()
 
-            # First move the audio files and remember their directories
-            artist_album_dirs = set()  # Keep track of artist/album directories
+            for image_file in all_image_files:
+                image_dir = os.path.dirname(image_file)
+                # If the image is in an artist/album directory we saw, or it's named "cover.*"
+                if image_dir in artist_album_dirs or os.path.basename(image_file).startswith(
+                    "cover.",
+                ):
+                    related_images.add(image_file)
 
+            # Get existing files in target to check for duplicates
+            target_filenames = set()
+            for root, _, files in os.walk(target_dir):
+                target_filenames.update(files)
+
+            # Process files based on options
+            if flat_structure:
+                print(f"📦 Copying files to target directory (flat structure): {target_dir}")
+            else:
+                print(
+                    f"📦 {'Copying' if keep_library else 'Moving'} files to target directory: {target_dir}",
+                )
+
+            # Process audio files
+            processed_audio = 0
+            processed_images = 0
+            skipped_files = 0
+
+            import shutil
+
+            # Process audio files first
             for audio_file in new_audio_files:
-                rel_path = os.path.relpath(audio_file, default_zotify_dir)
-                dest_path = os.path.join(target_dir, rel_path)
+                file_basename = os.path.basename(audio_file)
 
-                # Remember the artist/album directory for this audio file
-                audio_dir = os.path.dirname(audio_file)
-                artist_album_dirs.add(audio_dir)
+                if flat_structure:
+                    # Use flat structure - just the filename
+                    dest_path = os.path.join(target_dir, file_basename)
+                else:
+                    # Use nested structure
+                    rel_path = os.path.relpath(audio_file, default_zotify_dir)
+                    dest_path = os.path.join(target_dir, rel_path)
+
+                # Check if file already exists in target
+                if os.path.exists(dest_path):
+                    print(f"  ↷ Skipped: {file_basename} (already exists in target)")
+                    skipped_files += 1
+                    continue
 
                 # Make sure destination directory exists
                 dest_dir = os.path.dirname(dest_path)
                 os.makedirs(dest_dir, exist_ok=True)
 
-                # Move audio file
-                import shutil
-
+                # Copy or move based on keep_library setting
                 try:
-                    shutil.move(audio_file, dest_path)
-                    print(f"  ↳ Moved: {rel_path}")
-                    moved_audio_files += 1
+                    if keep_library:
+                        shutil.copy2(audio_file, dest_path)
+                        print(f"  ↳ Copied: {file_basename}")
+                    else:
+                        shutil.move(audio_file, dest_path)
+                        print(f"  ↳ Moved: {file_basename}")
+                    processed_audio += 1
                 except Exception as e:
-                    print(f"  ❌ Error moving {rel_path}: {e}")
+                    print(f"  ❌ Error processing {file_basename}: {e}")
 
-            # Now look for and move any image files in the same artist/album directories
-            for image_file in all_image_files:
-                image_dir = os.path.dirname(image_file)
+            # Now process cover images
+            for image_file in related_images:
+                file_basename = os.path.basename(image_file)
 
-                # If the image is in an artist/album directory we saw, or it's named "cover.*"
-                if image_dir in artist_album_dirs or os.path.basename(image_file).startswith(
-                    "cover.",
-                ):
+                if flat_structure:
+                    # For flat structure with multiple cover images, we need to make the filenames unique
+                    # Use parent folder name as prefix for cover art
+                    parent_folder = os.path.basename(os.path.dirname(image_file))
+                    if file_basename.startswith("cover."):
+                        # If it's a cover file, add the parent folder name
+                        name_parts = file_basename.split(".")
+                        new_basename = f"{parent_folder}-{name_parts[0]}.{name_parts[1]}"
+                    else:
+                        new_basename = f"{parent_folder}-{file_basename}"
+                    dest_path = os.path.join(target_dir, new_basename)
+                else:
+                    # Use nested structure
                     rel_path = os.path.relpath(image_file, default_zotify_dir)
                     dest_path = os.path.join(target_dir, rel_path)
 
-                    # Make sure destination directory exists
-                    dest_dir = os.path.dirname(dest_path)
-                    os.makedirs(dest_dir, exist_ok=True)
+                # Check if file already exists
+                if os.path.exists(dest_path):
+                    print(f"  ↷ Skipped: {file_basename} (already exists in target)")
+                    continue
 
-                    # Move image file
-                    try:
+                # Make sure destination directory exists
+                dest_dir = os.path.dirname(dest_path)
+                os.makedirs(dest_dir, exist_ok=True)
+
+                # Copy or move based on keep_library setting
+                try:
+                    if keep_library:
+                        shutil.copy2(image_file, dest_path)
+                        print(f"  ↳ Copied cover art: {os.path.basename(dest_path)}")
+                    else:
                         shutil.move(image_file, dest_path)
-                        print(f"  ↳ Moved cover art: {os.path.basename(image_file)}")
-                        moved_image_files += 1
-                    except Exception as e:
-                        print(f"  ❌ Error moving cover art {os.path.basename(image_file)}: {e}")
+                        print(f"  ↳ Moved cover art: {os.path.basename(dest_path)}")
+                    processed_images += 1
+                except Exception as e:
+                    print(f"  ❌ Error processing cover art {file_basename}: {e}")
 
-            # Now check what's in the target directory
-            current_in_target = set(list_existing_files(target_dir))
-            new_files_in_target = current_in_target - existing_in_target
-
-            if new_files_in_target:
+            # Summarize what happened
+            action = "Copied" if keep_library else "Moved"
+            structure = "flat structure" if flat_structure else "nested structure"
+            if processed_audio > 0 or processed_images > 0:
                 print(
-                    f"\n✨ Successfully moved {moved_audio_files} audio files and {moved_image_files} cover images to {target_dir}",
+                    f"\n✨ {action} {processed_audio} audio files and {processed_images} cover images to {target_dir} ({structure})",
                 )
+                if skipped_files > 0:
+                    print(f"   Skipped {skipped_files} files that already existed in target")
                 return True
-            print("\n⚠️ Failed to move files to target directory")
+            if skipped_files > 0:
+                print("\n⚠️ All files already exist in target. Nothing new to process.")
+                return True
+            print("\n⚠️ Failed to process any files to target directory")
             return False
         print("⚠️ No new audio files found in Zotify's default location. Something went wrong.")
         return False
@@ -511,6 +524,16 @@ Alternative options:
         help="Use two-step process: download as OGG first, then convert to MP3",
     )
     parser.add_argument(
+        "--keep-library",
+        action="store_true",
+        help="Keep files in Zotify's default location (creates a library)",
+    )
+    parser.add_argument(
+        "--flat-structure",
+        action="store_true",
+        help="Save files to target with a flat structure (no artist/album folders)",
+    )
+    parser.add_argument(
         "--remove-originals",
         action="store_true",
         help="Remove original .ogg files after conversion to MP3 (only with --use-ogg)",
@@ -562,6 +585,8 @@ Alternative options:
             args.wait_time,
             suppress_lyrics_errors=not args.show_lyrics_errors,
             download_format=download_format,
+            keep_library=args.keep_library,
+            flat_structure=args.flat_structure,
         )
         if not success:
             print("Download failed!")
