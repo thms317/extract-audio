@@ -7,7 +7,6 @@ import os
 import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 from tqdm import tqdm
@@ -110,13 +109,12 @@ def get_spotify_track_count(url: str) -> int | None:
         print(
             f"Debug - Zotify info output: {output[:200]}...",
         )  # Print first 200 chars for debugging
-        return None
     except Exception as e:
         print(f"Error getting track count: {e}")
-        return None
+    return None
 
 
-def download_spotify_content(
+def download_spotify_content(  # noqa: C901, PLR0913, PLR0911, PLR0912, PLR0915
     url: str,
     target_dir: str = DEFAULT_TARGET_DIR,
     bulk_wait_time: int = 30,
@@ -134,14 +132,14 @@ def download_spotify_content(
     target_path.mkdir(parents=True, exist_ok=True)
 
     # Find Zotify's default location
-    user_home = os.path.expanduser("~")
-    default_zotify_dir = os.path.join(user_home, "Music", "Zotify Music")
+    user_home = Path.home()
+    default_zotify_dir = str(user_home / "Music" / "Zotify Music")
 
     # Get existing files before download in both directories
     existing_in_target = set(list_existing_files(target_dir))
     existing_in_default = (
         set()
-        if not os.path.exists(default_zotify_dir)
+        if not Path(default_zotify_dir).exists()
         else set(list_existing_files(default_zotify_dir))
     )
     print(
@@ -169,7 +167,7 @@ def download_spotify_content(
 
     # Use Popen instead of run to get real-time output
     try:
-        process = subprocess.Popen(
+        process = subprocess.Popen(  # noqa: S603
             cmd,
             text=True,
             stdout=subprocess.PIPE,
@@ -250,7 +248,7 @@ def download_spotify_content(
         return False
 
     # Now check what new files were downloaded to the default location
-    if os.path.exists(default_zotify_dir):
+    if Path(default_zotify_dir).exists():
         # Get audio files first
         audio_extensions = [".ogg", ".mp3"]
         image_extensions = [".jpg", ".jpeg", ".png"]
@@ -266,7 +264,7 @@ def download_spotify_content(
         for root, _, files in os.walk(default_zotify_dir):
             for file in files:
                 if any(file.lower().endswith(ext) for ext in image_extensions):
-                    image_path = os.path.join(root, file)
+                    image_path = str(Path(root) / file)
                     all_image_files.add(image_path)
 
         # Log about found files
@@ -276,20 +274,20 @@ def download_spotify_content(
             )
 
             # Find all cover images in these directories
-            artist_album_dirs = {os.path.dirname(audio_file) for audio_file in new_audio_files}
+            artist_album_dirs = {str(Path(audio_file).parent) for audio_file in new_audio_files}
             related_images = set()
 
             for image_file in all_image_files:
-                image_dir = os.path.dirname(image_file)
+                image_dir = str(Path(image_file).parent)
                 # If the image is in an artist/album directory we saw, or it's named "cover.*"
-                if image_dir in artist_album_dirs or os.path.basename(image_file).startswith(
+                if image_dir in artist_album_dirs or Path(image_file).name.startswith(
                     "cover.",
                 ):
                     related_images.add(image_file)
 
             # Get existing files in target to check for duplicates
             target_filenames = set()
-            for root, _, files in os.walk(target_dir):
+            for _root, _, files in os.walk(target_dir):
                 target_filenames.update(files)
 
             # Process files based on options
@@ -309,25 +307,25 @@ def download_spotify_content(
 
             # Process audio files first
             for audio_file in new_audio_files:
-                file_basename = os.path.basename(audio_file)
+                file_basename = Path(audio_file).name
 
                 if flat_structure:
                     # Use flat structure - just the filename
-                    dest_path = os.path.join(target_dir, file_basename)
+                    dest_path = str(Path(target_dir) / file_basename)
                 else:
                     # Use nested structure
                     rel_path = os.path.relpath(audio_file, default_zotify_dir)
-                    dest_path = os.path.join(target_dir, rel_path)
+                    dest_path = str(Path(target_dir) / rel_path)
 
                 # Check if file already exists in target
-                if os.path.exists(dest_path):
+                if Path(dest_path).exists():
                     print(f"  ↷ Skipped: {file_basename} (already exists in target)")
                     skipped_files += 1
                     continue
 
                 # Make sure destination directory exists
-                dest_dir = os.path.dirname(dest_path)
-                os.makedirs(dest_dir, exist_ok=True)
+                dest_path_obj = Path(dest_path)
+                dest_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
                 # Copy or move based on keep_library setting
                 try:
@@ -343,41 +341,41 @@ def download_spotify_content(
 
             # Now process cover images
             for image_file in related_images:
-                file_basename = os.path.basename(image_file)
+                file_basename = Path(image_file).name
 
                 if flat_structure:
                     # For flat structure with multiple cover images, we need to make the filenames unique
                     # Use parent folder name as prefix for cover art
-                    parent_folder = os.path.basename(os.path.dirname(image_file))
+                    parent_folder = Path(image_file).parent.name
                     if file_basename.startswith("cover."):
                         # If it's a cover file, add the parent folder name
                         name_parts = file_basename.split(".")
                         new_basename = f"{parent_folder}-{name_parts[0]}.{name_parts[1]}"
                     else:
                         new_basename = f"{parent_folder}-{file_basename}"
-                    dest_path = os.path.join(target_dir, new_basename)
+                    dest_path = str(Path(target_dir) / new_basename)
                 else:
                     # Use nested structure
                     rel_path = os.path.relpath(image_file, default_zotify_dir)
-                    dest_path = os.path.join(target_dir, rel_path)
+                    dest_path = str(Path(target_dir) / rel_path)
 
                 # Check if file already exists
-                if os.path.exists(dest_path):
+                if Path(dest_path).exists():
                     print(f"  ↷ Skipped: {file_basename} (already exists in target)")
                     continue
 
                 # Make sure destination directory exists
-                dest_dir = os.path.dirname(dest_path)
-                os.makedirs(dest_dir, exist_ok=True)
+                dest_path_obj = Path(dest_path)
+                dest_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
                 # Copy or move based on keep_library setting
                 try:
                     if keep_library:
                         shutil.copy2(image_file, dest_path)
-                        print(f"  ↳ Copied cover art: {os.path.basename(dest_path)}")
+                        print(f"  ↳ Copied cover art: {Path(dest_path).name}")
                     else:
                         shutil.move(image_file, dest_path)
-                        print(f"  ↳ Moved cover art: {os.path.basename(dest_path)}")
+                        print(f"  ↳ Moved cover art: {Path(dest_path).name}")
                     processed_images += 1
                 except Exception as e:
                     print(f"  ❌ Error processing cover art {file_basename}: {e}")
