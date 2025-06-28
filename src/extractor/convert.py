@@ -110,7 +110,7 @@ def copy_audio_files(source_dir: str, target_dir: str, extension: str = ".mp3") 
                     shutil.copy2(str(source_path), str(target_path))
                     copied_count += 1
                     print(f"Copied: {source_path.name} → {target_filename}")
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     print(f"Error copying {source_path}: {e}")
 
     # Print summary

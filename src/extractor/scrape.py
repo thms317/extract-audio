@@ -67,7 +67,7 @@ def find_mp3_urls_from_archive(archive_url: str) -> list[str]:
     except requests.exceptions.RequestException as e:
         print(f"Error fetching the URL: {e}")
         return []
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"An error occurred while parsing the HTML: {e}")
         return []
 
@@ -201,7 +201,7 @@ def download_mp3(  # noqa: C901, PLR0912, PLR0913
             else:
                 return False, None, error_msg
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             error_msg = f"Error downloading {url}: {e!s}"
             print(f"Attempt {attempt + 1}/{max_retries} failed: {error_msg}")
 
