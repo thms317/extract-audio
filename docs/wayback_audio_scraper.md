@@ -318,10 +318,36 @@ python src/extractor/scrape.py "WAYBACK_URL" -d -r 5 -w 5.0
 - Try different URL prefixes (im_ vs oe_)
 - Verify the original file was accessible when archived
 
+## Using as a Python Module
+
+You can import the functions to use in your own Python code:
+
+```python
+from extractor.scrape import find_mp3_urls_from_archive, download_mp3
+
+# Get MP3 URLs from an archived page
+urls = find_mp3_urls_from_archive("https://web.archive.org/web/20210418151905/https://example.com/page.html")
+
+# Download a specific MP3
+success, filepath, error = download_mp3(
+    urls[0],                  # URL to download
+    "./downloads",            # Destination directory
+    filename="my_audio.mp3",  # Custom filename
+    max_retries=5,            # Max retry attempts
+    force_download=True       # Overwrite existing file
+)
+
+if success:
+    print(f"Downloaded to {filepath}")
+else:
+    print(f"Download failed: {error}")
+```
+
 ## Output Examples
 
 ### Discovery Mode
-```
+
+```bash
 $ python src/extractor/scrape.py "WAYBACK_URL"
 
 Found 5 potential MP3 URLs (adjusted for Wayback Machine):
@@ -338,7 +364,8 @@ Use --download to save the MP3 files.
 ```
 
 ### Download Mode
-```
+
+```bash
 $ python src/extractor/scrape.py "WAYBACK_URL" --download
 
 Found 5 potential MP3 URLs (adjusted for Wayback Machine):

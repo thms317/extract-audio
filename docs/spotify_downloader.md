@@ -1,228 +1,321 @@
-# Spotify Music Downloader Guide
+# Spotify Music Downloader
 
-This guide provides step-by-step instructions for downloading music from Spotify using Zotify and converting the downloaded files to MP3 format.
+A Python tool for downloading music from Spotify and converting it to MP3 format using Zotify. Supports tracks, albums, and playlists with intelligent file organization and conversion options.
+
+## Quick Start
+
+```bash
+# Setup the project
+make setup
+
+# Download a track as MP3 (default)
+python src/extractor/spotify.py "https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh"
+
+# Download an album with custom target directory
+python src/extractor/spotify.py "https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3" -t ~/Downloads/Music
+
+# Download a playlist with rate limiting
+python src/extractor/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" -w 45
+```
 
 ## Prerequisites
 
-- Python 3.12 or higher
-- Git
-- ffmpeg (for audio conversion)
-- uv package manager (https://github.com/astral-sh/uv)
+### Required Software
+- **Python 3.12+**
+- **uv package manager** (installed via `make setup`)
+- **ffmpeg** for audio conversion
+- **Valid Spotify account**
 
-## Step 1: Setup Python Environment
-
-First, create a dedicated Python virtual environment for Zotify:
-
+### Install ffmpeg
 ```bash
-# Create a new directory for the project
-mkdir spotify-downloader
-cd spotify-downloader
+# macOS (using Homebrew)
+brew install ffmpeg
 
-# Create a Python virtual environment using uv
-uv venv
+# Ubuntu/Debian
+sudo apt update && sudo apt install ffmpeg
 
-# Activate the virtual environment
-# On macOS/Linux:
-source .venv/bin/activate
-# On Windows:
-# .venv\Scripts\activate
+# Windows (using Chocolatey)
+choco install ffmpeg
 ```
 
-## Step 2: Generate Spotify Credentials
+## Setup Instructions
 
-To download from Spotify, you need valid credentials. The easiest way is using librespot-auth:
+### 1. Project Setup
+```bash
+# Clone and setup the project
+git clone <repository-url>
+cd extract-audio
+make setup
+```
+
+### 2. Spotify Credentials
+Generate Spotify credentials using librespot-auth:
 
 ```bash
-# Clone the librespot-auth repository
+# Clone the authentication tool
 git clone https://github.com/dspearson/librespot-auth.git
 cd librespot-auth
 
-# Install dependencies using uv
+# Install dependencies and generate credentials
 uv pip install -r requirements.txt
-
-# Run the authentication script
 python librespot_auth.py
 
-# Follow the prompts:
-# 1. Enter your Spotify username/email
-# 2. Enter your password
-# 3. The script will generate credentials.json
+# Follow the prompts to enter your Spotify username and password
+# This will generate a credentials.json file
 ```
 
-Save the generated `credentials.json` file to the Zotify configuration directory:
-- macOS: `~/Library/Application Support/Zotify/credentials.json`
-- Linux: `~/.config/Zotify/credentials.json`
-- Windows: `%APPDATA%\Zotify\credentials.json`
-
+Copy the generated credentials to the correct location:
 ```bash
-# For macOS (create directory if it doesn't exist)
+# macOS
 mkdir -p ~/Library/Application\ Support/Zotify/
 cp credentials.json ~/Library/Application\ Support/Zotify/
 
-# For Linux
-# mkdir -p ~/.config/Zotify/
-# cp credentials.json ~/.config/Zotify/
+# Linux
+mkdir -p ~/.config/Zotify/
+cp credentials.json ~/.config/Zotify/
 
-# For Windows (PowerShell)
-# mkdir -p $env:APPDATA\Zotify
-# cp credentials.json $env:APPDATA\Zotify\
+# Windows (PowerShell)
+mkdir -p $env:APPDATA\Zotify
+cp credentials.json $env:APPDATA\Zotify\
 ```
 
-## Step 3: Install and Configure Zotify
+## Usage
 
-You can install Zotify using uv or use a forked version with additional features:
-
-### Option 1: Standard Installation
+### Basic Commands
 
 ```bash
-# Return to your project directory
-cd ..
-uv pip install zotify
-```
-
-### Option 2: Install from the bgeorgakas Fork (Recommended)
-
-This fork provides workarounds for rate limiting and audio key errors:
-
-```bash
-# Clone the forked repository
-git clone https://github.com/bgeorgakas/zotify.git
-cd zotify
-
-# Install the package using uv
-uv pip install -e .
-
-# Return to your project directory
-cd ..
-```
-
-## Step 4: Download Music from Spotify
-
-You can download individual tracks, albums, or playlists:
-
-```bash
-# Activate your virtual environment if it's not already active
+# Activate the virtual environment (if not already active)
 source .venv/bin/activate
 
 # Download a single track
-zotify https://open.spotify.com/track/TRACK_ID_HERE
+python src/extractor/spotify.py "https://open.spotify.com/track/TRACK_ID"
 
 # Download an album
-zotify https://open.spotify.com/album/ALBUM_ID_HERE
+python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID"
 
 # Download a playlist
-zotify https://open.spotify.com/playlist/PLAYLIST_ID_HERE
-
-# Download multiple links from a file (one URL per line)
-# First create a file:
-echo "https://open.spotify.com/track/TRACK_ID_1" > links.txt
-echo "https://open.spotify.com/album/ALBUM_ID_1" >> links.txt
-
-# Then download:
-zotify -d links.txt
+python src/extractor/spotify.py "https://open.spotify.com/playlist/PLAYLIST_ID"
 ```
 
-If you're using the bgeorgakas fork, add the `--bulk-wait-time` parameter to avoid rate limits:
+### Command-Line Options
 
+| Option | Description | Default |
+|--------|-------------|---------|
+| `url` | Spotify URL (required unless using `--skip-download`) | - |
+| `-t, --target` | Target directory for downloads | `extracted/noah_v2` |
+| `-w, --wait-time` | Wait time between downloads (seconds) | 30 |
+| `--skip-download` | Skip download, only convert existing files | False |
+| `--keep-ogg` | Download as OGG, skip MP3 conversion | False |
+| `--use-ogg` | Download as OGG first, then convert to MP3 | False |
+| `--keep-library` | Keep files in Zotify's default location | False |
+| `--flat-structure` | Save files without artist/album folders | False |
+| `--remove-originals` | Remove OGG files after MP3 conversion | False |
+| `--show-lyrics-errors` | Show lyrics-related error messages | False |
+
+### Download Formats
+
+**Direct MP3 (Default)**
 ```bash
-zotify -d links.txt --credentials-location /path/to/credentials.json --bulk-wait-time 30
+python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID"
+```
+Downloads directly as MP3 using Zotify's built-in conversion.
+
+**Two-Step Process (OGG → MP3)**
+```bash
+python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" --use-ogg
+```
+Downloads as OGG first, then converts to MP3 for maximum compatibility.
+
+**OGG Only**
+```bash
+python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" --keep-ogg
+```
+Downloads as OGG format only, no MP3 conversion.
+
+### File Organization
+
+**Nested Structure (Default)**
+```
+extracted/noah_v2/
+├── Artist Name/
+│   ├── Album Name/
+│   │   ├── 01 - Track Name.mp3
+│   │   ├── 02 - Track Name.mp3
+│   │   └── cover.jpg
+│   └── Another Album/
+└── Another Artist/
 ```
 
-Downloaded files will be saved to:
-- macOS: `~/Music/Zotify Music/[Artist]/[Album]/[Track].ogg`
-- Linux: `~/Music/Zotify Music/[Artist]/[Album]/[Track].ogg`
-- Windows: `%USERPROFILE%\Music\Zotify Music\[Artist]\[Album]\[Track].ogg`
-
-## Step 5: Convert .ogg Files to MP3 Format
-
-Zotify downloads songs in .ogg format. To convert them to MP3, use ffmpeg:
-
-### Install ffmpeg
-
+**Flat Structure**
 ```bash
-# On macOS (using Homebrew)
-brew install ffmpeg
-
-# On Ubuntu/Debian
-# sudo apt update
-# sudo apt install ffmpeg
-
-# On Windows (using Chocolatey)
-# choco install ffmpeg
+python src/extractor/spotify.py "SPOTIFY_URL" --flat-structure
+```
+```
+extracted/noah_v2/
+├── Artist - Track Name.mp3
+├── Artist - Another Track.mp3
+├── Artist-cover.jpg
+└── AnotherArtist-cover.jpg
 ```
 
-### Convert Individual Files
+## Practical Examples
 
+### Download a Complete Album
 ```bash
-# Basic conversion
-ffmpeg -i input.ogg -codec:a libmp3lame -q:a 2 output.mp3
+# Download The Beatles - Abbey Road
+python src/extractor/spotify.py "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN" \
+  -t ~/Music/Beatles \
+  -w 45
 ```
 
-### Convert All Files in a Directory
-
-Use the included conversion script:
-
+### Download Multiple Playlists with Rate Limiting
 ```bash
-# Run the script on your Zotify music directory
-./convert_ogg_to_mp3.sh ~/Music/Zotify\ Music
+# For large playlists, use longer wait times to avoid rate limits
+python src/extractor/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" \
+  -w 60 \
+  --flat-structure
 ```
 
-The script will recursively process all directories and convert .ogg files to MP3 format.
-
-## Quick Reference
-
-To set up and download in one go:
-
+### Convert Existing Files Only
 ```bash
-# Create and activate environment
-uv venv
-source .venv/bin/activate
+# If you have OGG files that need conversion to MP3
+python src/extractor/spotify.py "dummy_url" \
+  --skip-download \
+  -t ~/Music/ExistingFiles
+```
 
-# Get credentials
-git clone https://github.com/dspearson/librespot-auth.git
-cd librespot-auth
-uv pip install -r requirements.txt
-python librespot_auth.py
-mkdir -p ~/Library/Application\ Support/Zotify/
-cp credentials.json ~/Library/Application\ Support/Zotify/
-cd ..
+### Create a Music Library
+```bash
+# Keep files in Zotify's location AND copy to target
+python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" \
+  --keep-library \
+  -t ~/Music/MyCollection
+```
 
-# Install Zotify (fork version)
-git clone https://github.com/bgeorgakas/zotify.git
-cd zotify
-uv pip install -e .
-cd ..
+## Output and Progress
 
-# Download music
-zotify https://open.spotify.com/track/YOUR_TRACK_ID --bulk-wait-time 30
+The tool provides real-time download progress:
 
-# Install ffmpeg and convert files
-brew install ffmpeg
-cd ~/Music/Zotify\ Music
-for f in $(find . -name "*.ogg"); do
-    ffmpeg -i "$f" -codec:a libmp3lame -q:a 2 "${f%.ogg}.mp3"
-done
+```
+Downloading from: https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3
+Target directory: extracted/noah_v2
+Found 0 existing files in target and 45 in Zotify's default location
+Total tracks to download: 12
+
+Starting Zotify download...
+⏱️  Downloading in progress, will display real-time updates below:
+
+[●] Preparing to download album: Abbey Road
+[∙] Track 1/12: Come Together
+████████████████████████████████████████ 100% | 3.2MB/3.2MB | 1.2MB/s
+Download successful. Processing...
+
+✅ Download successful! Found 12 new audio files in Zotify's default location.
+📦 Copying files to target directory (flat structure): extracted/noah_v2
+  ↳ Copied: Come Together.mp3
+  ↳ Copied: Something.mp3
+  ...
+  ↳ Copied cover art: Abbey Road-cover.jpg
+
+✨ Copied 12 audio files and 1 cover images to extracted/noah_v2 (flat structure)
+```
+
+## Rate Limiting and Best Practices
+
+### Avoiding Rate Limits
+- Use `--wait-time 45` or higher for large downloads
+- Take breaks between large playlist downloads
+- Avoid downloading too many items in quick succession
+
+### Recommended Settings
+```bash
+# For albums (10-15 tracks)
+-w 30
+
+# For large playlists (50+ tracks)
+-w 60
+
+# For very large playlists (100+ tracks)
+-w 90
 ```
 
 ## Troubleshooting
 
-### Rate Limiting Issues
+### Common Issues
 
-If you encounter "Audio key error" messages:
-- Use the `--bulk-wait-time 30` parameter to add a delay between downloads
-- Take a break for a few hours if you hit the rate limit
-- Consider using a different Spotify account
+**"Audio key error" or Rate Limiting**
+```bash
+# Increase wait time and try again
+python src/extractor/spotify.py "SPOTIFY_URL" -w 90
+```
 
-### Authentication Issues
+**Authentication Errors**
+```bash
+# Regenerate credentials
+cd librespot-auth
+python librespot_auth.py
+# Copy new credentials.json to Zotify directory
+```
 
-If authentication fails:
-- Ensure you're using the correct Spotify credentials
-- Try regenerating the credentials.json file
-- Check that the credentials file is in the correct location
+**ffmpeg Not Found**
+```bash
+# Install ffmpeg
+brew install ffmpeg  # macOS
+sudo apt install ffmpeg  # Linux
+```
 
-### Conversion Issues
+**No Files Downloaded**
+- Check that the Spotify URL is valid and accessible
+- Verify Zotify credentials are properly configured
+- Ensure you have an active Spotify subscription
 
-If ffmpeg conversion fails:
-- Make sure ffmpeg is properly installed: `ffmpeg -version`
-- Check if the input file exists and is a valid .ogg file
-- Ensure you have write permissions in the output directory
+### Debug Information
+
+Enable detailed output:
+```bash
+python src/extractor/spotify.py "SPOTIFY_URL" --show-lyrics-errors
+```
+
+## File Locations
+
+### Default Directories
+- **Zotify Default**: `~/Music/Zotify Music/`
+- **Tool Default**: `extracted/noah_v2/`
+- **Credentials**:
+  - macOS: `~/Library/Application Support/Zotify/credentials.json`
+  - Linux: `~/.config/Zotify/credentials.json`
+  - Windows: `%APPDATA%\Zotify\credentials.json`
+
+### Supported Formats
+- **Input**: Spotify URLs (tracks, albums, playlists)
+- **Output**: MP3 (default), OGG (optional)
+- **Cover Art**: JPG, PNG
+
+## Advanced Usage
+
+### Batch Processing
+```bash
+# Create a script for multiple downloads
+#!/bin/bash
+albums=(
+  "https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3"
+  "https://open.spotify.com/album/6dVIqQ8qmQ58ufgt541SVh"
+  "https://open.spotify.com/album/2PPc7mrWkAXwfhB3horOE7"
+)
+
+for album in "${albums[@]}"; do
+  python src/extractor/spotify.py "$album" -w 90 -t ~/Music/Collection
+  sleep 300  # 5-minute break between albums
+done
+```
+
+### Integration with Other Tools
+```bash
+# Convert to other formats after download
+find extracted/noah_v2 -name "*.mp3" -exec ffmpeg -i {} -c:a flac {}.flac \;
+
+# Organize by year (requires additional metadata tools)
+# Use tools like eyeD3 or mutagen for advanced metadata handling
+```
+
+This tool provides a robust solution for downloading and organizing music from Spotify while respecting rate limits and providing excellent user feedback throughout the process.
