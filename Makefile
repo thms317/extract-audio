@@ -1,8 +1,6 @@
-.PHONY: install setup clean test tree docs lint
+.PHONY: install setup clean test tree lint
 
 .DEFAULT_GOAL := setup
-
-SHELL := /bin/bash
 
 PROFILE_NAME := "DEFAULT"
 
@@ -104,10 +102,6 @@ test:
 tree:
 	@echo "Generating project tree..."
 	@tree -I '.venv|__pycache__|archive|scratch|.databricks|.ruff_cache|.mypy_cache|.pytest_cache|.git|htmlcov|site|dist|.DS_Store|fixtures' -a
-
-docs:
-	@echo "Generating HTML documentation..."
-	@uv run mkdocs serve
 
 lint:
 	@echo "Linting the project..."
