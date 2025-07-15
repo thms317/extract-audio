@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/thms317/extract-audio/compare/v1.0.1...v1.1.0) (2025-07-15)
+
+
+### Features
+
+* add TicketSwap data scraping functionality ([f09b9f7](https://github.com/thms317/extract-audio/commit/f09b9f7bec71140e43dc2baa82c5f3f4f68d4958))
+
 ## [1.0.1](https://github.com/thms317/extract-audio/compare/v1.0.0...v1.0.1) (2025-06-28)
 
 
