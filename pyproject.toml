@@ -1,6 +1,6 @@
 [project]
 name = "cratedigger"
-version = "1.1.0"
+version = "1.2.0"
 description = "Cratedigger - Audio extraction and discovery tool."
 authors = [
     { name = "Thomas Brouwer", email = "notifications@example.com" },

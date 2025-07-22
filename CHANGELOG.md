@@ -1,3 +1,20 @@
+# [1.2.0](https://github.com/thms317/extract-audio/compare/v1.1.0...v1.2.0) (2025-07-22)
+
+
+### Bug Fixes
+
+* typing issues ([be014a0](https://github.com/thms317/extract-audio/commit/be014a057b74f9c321decac7c28db9bc146bd11a))
+
+
+### Features
+
+* rename project from `extract-audio` to `cratedigger` ([ae8566e](https://github.com/thms317/extract-audio/commit/ae8566e01294d0d5188ef9f2f16c75cd84749556))
+
+
+### Reverts
+
+* move TicketSwap scraper to a dedicated repo ([52012df](https://github.com/thms317/extract-audio/commit/52012dfbde224ab2b051e9b02367012884b58450))
+
 # [1.1.0](https://github.com/thms317/cratedigger/compare/v1.0.1...v1.1.0) (2025-07-15)
 
 
