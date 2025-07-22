@@ -9,13 +9,13 @@ A Python tool for extracting and downloading MP3 files from archived websites on
 make setup
 
 # Find MP3s on an archived webpage (discovery only)
-python src/extractor/scrape.py "https://web.archive.org/web/20210418151905/https://example.com/audio-page"
+python src/cratedigger/scrape.py "https://web.archive.org/web/20210418151905/https://example.com/audio-page"
 
 # Find and download MP3s
-python src/extractor/scrape.py "https://web.archive.org/web/20210418151905/https://example.com/audio-page" --download
+python src/cratedigger/scrape.py "https://web.archive.org/web/20210418151905/https://example.com/audio-page" --download
 
 # Download with custom settings
-python src/extractor/scrape.py "WAYBACK_URL" -d -o ~/Downloads/Audio -r 5 -w 3.0
+python src/cratedigger/scrape.py "WAYBACK_URL" -d -o ~/Downloads/Audio -r 5 -w 3.0
 ```
 
 ## How It Works
@@ -51,13 +51,13 @@ uv pip install requests beautifulsoup4
 source .venv/bin/activate
 
 # Discover MP3s without downloading
-python src/extractor/scrape.py "WAYBACK_MACHINE_URL"
+python src/cratedigger/scrape.py "WAYBACK_MACHINE_URL"
 
 # Download discovered MP3s
-python src/extractor/scrape.py "WAYBACK_MACHINE_URL" --download
+python src/cratedigger/scrape.py "WAYBACK_MACHINE_URL" --download
 
 # Use custom output directory
-python src/extractor/scrape.py "WAYBACK_MACHINE_URL" -d -o ~/Audio/Extracted
+python src/cratedigger/scrape.py "WAYBACK_MACHINE_URL" -d -o ~/Audio/Extracted
 ```
 
 ### Command-Line Options
@@ -98,7 +98,7 @@ https://web.archive.org/web/20210418151905/https://www.example.com/audio-page.ht
 ### Discover Audio Files
 ```bash
 # Check what MP3s are available on an archived music site
-python src/extractor/scrape.py \
+python src/cratedigger/scrape.py \
   "https://web.archive.org/web/20200615082341/https://www.example-music-site.com/downloads"
 ```
 
@@ -118,7 +118,7 @@ Use --download to save the MP3 files.
 ### Download Audio Files
 ```bash
 # Download all found MP3s
-python src/extractor/scrape.py \
+python src/cratedigger/scrape.py \
   "https://web.archive.org/web/20200615082341/https://www.example-music-site.com/downloads" \
   --download \
   --output ~/Music/Archived
@@ -146,7 +146,7 @@ Download complete: 7 successful, 1 failed
 ### Handle Rate Limiting
 ```bash
 # For sites with strict rate limiting, increase wait time
-python src/extractor/scrape.py "WAYBACK_URL" \
+python src/cratedigger/scrape.py "WAYBACK_URL" \
   -d \
   -w 5.0 \
   -r 5
@@ -155,7 +155,7 @@ python src/extractor/scrape.py "WAYBACK_URL" \
 ### Force Re-download
 ```bash
 # Re-download files even if they already exist
-python src/extractor/scrape.py "WAYBACK_URL" \
+python src/cratedigger/scrape.py "WAYBACK_URL" \
   -d \
   --force
 ```
@@ -175,7 +175,7 @@ urls=(
 
 for url in "${urls[@]}"; do
   echo "Processing: $url"
-  python src/extractor/scrape.py "$url" -d -o "downloads/$(date +%Y%m%d_%H%M%S)" -w 3.0
+  python src/cratedigger/scrape.py "$url" -d -o "downloads/$(date +%Y%m%d_%H%M%S)" -w 3.0
   echo "Waiting 30 seconds before next site..."
   sleep 30
 done
@@ -184,7 +184,7 @@ done
 ### Selective Discovery
 ```bash
 # First discover what's available
-python src/extractor/scrape.py "WAYBACK_URL" > discovered_files.txt
+python src/cratedigger/scrape.py "WAYBACK_URL" > discovered_files.txt
 
 # Review the list, then download selectively
 # (You could modify the script to accept a file list)
@@ -238,13 +238,13 @@ The scraper intelligently handles different URL formats found in archived pages:
 **Network Timeouts**
 ```bash
 # Increase retry attempts for unstable connections
-python src/extractor/scrape.py "WAYBACK_URL" -d -r 10 -w 5.0
+python src/cratedigger/scrape.py "WAYBACK_URL" -d -r 10 -w 5.0
 ```
 
 **Rate Limiting (429 errors)**
 ```bash
 # Increase wait time between requests
-python src/extractor/scrape.py "WAYBACK_URL" -d -w 10.0
+python src/cratedigger/scrape.py "WAYBACK_URL" -d -w 10.0
 ```
 
 **File Not Found (404 errors)**
@@ -266,7 +266,7 @@ mp3_downloads/
 ### Custom Organization
 ```bash
 # Organize by date/site
-python src/extractor/scrape.py "WAYBACK_URL" -d -o "downloads/$(date +%Y%m%d)/site_name"
+python src/cratedigger/scrape.py "WAYBACK_URL" -d -o "downloads/$(date +%Y%m%d)/site_name"
 ```
 
 ## Best Practices
@@ -305,7 +305,7 @@ python src/extractor/scrape.py "WAYBACK_URL" -d -o "downloads/$(date +%Y%m%d)/si
 ### Download Failures
 ```bash
 # Enable verbose output for debugging
-python src/extractor/scrape.py "WAYBACK_URL" -d -r 5 -w 5.0
+python src/cratedigger/scrape.py "WAYBACK_URL" -d -r 5 -w 5.0
 ```
 
 **Common issues:**
@@ -323,7 +323,7 @@ python src/extractor/scrape.py "WAYBACK_URL" -d -r 5 -w 5.0
 You can import the functions to use in your own Python code:
 
 ```python
-from extractor.scrape import find_mp3_urls_from_archive, download_mp3
+from cratedigger.scrape import find_mp3_urls_from_archive, download_mp3
 
 # Get MP3 URLs from an archived page
 urls = find_mp3_urls_from_archive("https://web.archive.org/web/20210418151905/https://example.com/page.html")
@@ -348,7 +348,7 @@ else:
 ### Discovery Mode
 
 ```bash
-$ python src/extractor/scrape.py "WAYBACK_URL"
+$ python src/cratedigger/scrape.py "WAYBACK_URL"
 
 Found 5 potential MP3 URLs (adjusted for Wayback Machine):
 https://web.archive.org/web/20200615082341im_/https://example.com/audio1.mp3
@@ -366,7 +366,7 @@ Use --download to save the MP3 files.
 ### Download Mode
 
 ```bash
-$ python src/extractor/scrape.py "WAYBACK_URL" --download
+$ python src/cratedigger/scrape.py "WAYBACK_URL" --download
 
 Found 5 potential MP3 URLs (adjusted for Wayback Machine):
 ...

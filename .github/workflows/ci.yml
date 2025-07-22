@@ -38,11 +38,11 @@ jobs:
       - name: Build and check package
         run: |
           uv build
-          tar -xvzf dist/extractor-*.tar.gz
-          diff -r -x __pycache__ src/extractor extractor-*/src/extractor
+          tar -xvzf dist/cratedigger-*.tar.gz
+          diff -r -x __pycache__ src/cratedigger cratedigger-*/src/cratedigger
 
       - name: Run tests with coverage report
         run: |
           uv run pytest -v tests --cov=src --cov-report term
         env:
-          PYTHONPATH: ${{ github.workspace }}/src/extractor
+          PYTHONPATH: ${{ github.workspace }}/src/cratedigger

@@ -5,6 +5,7 @@
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -32,7 +33,6 @@ def get_spotify_content_type(url: str) -> str | None:
     if match:
         return match.group(1)
     return None
-
 
 
 def list_existing_files(
@@ -302,8 +302,6 @@ def download_spotify_content(  # noqa: C901, PLR0913, PLR0911, PLR0912, PLR0915
             processed_audio = 0
             processed_images = 0
             skipped_files = 0
-
-            import shutil
 
             # Process audio files first
             for audio_file in new_audio_files:

@@ -182,7 +182,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # copy_audio_files(
-    #     "/Users/thomasbrouwer/code/extract-audio/extracted/v2",
-    #     "/Users/thomasbrouwer/code/extract-audio/extracted/converted",
+    #     "/Users/thomasbrouwer/code/cratedigger/extracted/v2",
+    #     "/Users/thomasbrouwer/code/cratedigger/extracted/converted",
     #     extension=".mp3",
     # )
