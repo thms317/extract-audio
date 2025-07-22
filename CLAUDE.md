@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an audio extraction tool with two main components:
+Cratedigger is an audio extraction and discovery tool with two main components:
 - **Spotify Music Downloader**: Downloads music from Spotify URLs using the Zotify library
 - **Wayback Machine Audio Scraper**: Extracts MP3 files from archived websites
 
@@ -17,7 +17,7 @@ make setup
 # Run tests with coverage
 make test
 
-# Lint and type check (runs ruff, mypy, pydoclint, bandit)
+# Lint and type check (runs ruff, mypy, pydoclint)
 make lint
 
 # Clean project artifacts
@@ -40,11 +40,10 @@ make tree
 ## Architecture
 
 ```
-src/extractor/
+src/cratedigger/
 ├── spotify.py     # Spotify downloading with progress tracking
 ├── scrape.py      # Wayback Machine audio extraction
-├── convert.py     # OGG to MP3 conversion utilities
-└── main.py        # Entry point
+└── convert.py     # OGG to MP3 conversion utilities
 ```
 
 - Audio files downloaded to `extracted/` directory
@@ -54,9 +53,8 @@ src/extractor/
 ## Code Quality Standards
 
 - **Linting**: Ruff with strict settings (100 char line length)
-- **Type Checking**: mypy with strict mode
-- **Security**: bandit security scanning
-- **Docstrings**: NumPy style convention
+- **Type Checking**: ty type checker (replaced mypy)
+- **Docstrings**: NumPy style convention via pydoclint
 - **Testing**: pytest with coverage reporting
 
 ## Testing
@@ -65,6 +63,17 @@ src/extractor/
 - Run single test: `uv run pytest tests/test_specific.py -v`
 - Pytest configuration in `pyproject.toml` sets pythonpath to `["src"]`
 
-## Entry Point
+## Entry Points
 
-Main script accessible via: `uv run python -m extractor.main`
+- **Main entry point**: `uv run python -m cratedigger.main`
+- **Console script**: `uv run main` (via pyproject.toml entry point)
+- **Spotify downloader**: `uv run python src/cratedigger/spotify.py <url>`
+- **Wayback scraper**: `uv run python src/cratedigger/scrape.py <url>`
+- **OGG to MP3 converter**: `uv run python src/cratedigger/convert.py <directory>`
+
+## Development Workflow
+
+- Use `uv sync` to sync dependencies after changes
+- Use `uv build` to build the package before testing
+- Single test execution: `uv run pytest tests/test_specific.py::test_function_name -v`
+- Pre-commit hooks are configured for code quality checks

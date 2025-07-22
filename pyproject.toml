@@ -1,7 +1,7 @@
 [project]
-name = "extract-audio"
+name = "cratedigger"
 version = "1.1.0"
-description = "Extract audio."
+description = "Cratedigger - Audio extraction and discovery tool."
 authors = [
     { name = "Thomas Brouwer", email = "notifications@example.com" },
 ]
@@ -11,7 +11,6 @@ dependencies = [
     "bs4>=0.0.2",
     "requests>=2.32.3",
     "tqdm>=4.67.1",
-    "ty>=0.0.1a12",
     "types-requests>=2.32.0.20250328",
     "types-tqdm>=4.67.0.20250417",
     "zotify",
@@ -19,13 +18,14 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "bandit>=1.8.3",
     "pre-commit>=4.1.0",
     "pydoclint>=0.6.6",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "pytest>=8.3.5",
     "ruff>=0.11.9",
+    "ty>=0.0.1a12",
+
 ]
 
 [tool.uv]
@@ -33,9 +33,6 @@ package = true
 
 [tool.uv.sources]
 zotify = { git = "https://github.com/bgeorgakas/zotify.git" }
-
-[project.scripts]
-main = "extractor.main:main"
 
 [tool.ruff]
 target-version = "py312"

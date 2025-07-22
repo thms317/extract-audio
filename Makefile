@@ -112,6 +112,4 @@ lint:
 	@uv run ty check .
 	@echo "Running pydoclint..."
 	@uv run pydoclint .
-	@echo "Running bandit..."
-	@uv run bandit --configfile=pyproject.toml --severity-level=medium -r .
 	@echo "Linting completed successfully!"

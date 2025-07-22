@@ -9,13 +9,13 @@ A Python tool for downloading music from Spotify and converting it to MP3 format
 make setup
 
 # Download a track as MP3 (default)
-python src/extractor/spotify.py "https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh"
+python src/cratedigger/spotify.py "https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh"
 
 # Download an album with custom target directory
-python src/extractor/spotify.py "https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3" -t ~/Downloads/Music
+python src/cratedigger/spotify.py "https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3" -t ~/Downloads/Music
 
 # Download a playlist with rate limiting
-python src/extractor/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" -w 45
+python src/cratedigger/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" -w 45
 ```
 
 ## Prerequisites
@@ -44,7 +44,7 @@ choco install ffmpeg
 ```bash
 # Clone and setup the project
 git clone <repository-url>
-cd extract-audio
+cd cratedigger
 make setup
 ```
 
@@ -88,13 +88,13 @@ cp credentials.json $env:APPDATA\Zotify\
 source .venv/bin/activate
 
 # Download a single track
-python src/extractor/spotify.py "https://open.spotify.com/track/TRACK_ID"
+python src/cratedigger/spotify.py "https://open.spotify.com/track/TRACK_ID"
 
 # Download an album
-python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID"
+python src/cratedigger/spotify.py "https://open.spotify.com/album/ALBUM_ID"
 
 # Download a playlist
-python src/extractor/spotify.py "https://open.spotify.com/playlist/PLAYLIST_ID"
+python src/cratedigger/spotify.py "https://open.spotify.com/playlist/PLAYLIST_ID"
 ```
 
 ### Command-Line Options
@@ -116,19 +116,19 @@ python src/extractor/spotify.py "https://open.spotify.com/playlist/PLAYLIST_ID"
 
 **Direct MP3 (Default)**
 ```bash
-python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID"
+python src/cratedigger/spotify.py "https://open.spotify.com/album/ALBUM_ID"
 ```
 Downloads directly as MP3 using Zotify's built-in conversion.
 
 **Two-Step Process (OGG → MP3)**
 ```bash
-python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" --use-ogg
+python src/cratedigger/spotify.py "https://open.spotify.com/album/ALBUM_ID" --use-ogg
 ```
 Downloads as OGG first, then converts to MP3 for maximum compatibility.
 
 **OGG Only**
 ```bash
-python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" --keep-ogg
+python src/cratedigger/spotify.py "https://open.spotify.com/album/ALBUM_ID" --keep-ogg
 ```
 Downloads as OGG format only, no MP3 conversion.
 
@@ -148,7 +148,7 @@ extracted/noah_v2/
 
 **Flat Structure**
 ```bash
-python src/extractor/spotify.py "SPOTIFY_URL" --flat-structure
+python src/cratedigger/spotify.py "SPOTIFY_URL" --flat-structure
 ```
 ```
 extracted/noah_v2/
@@ -163,7 +163,7 @@ extracted/noah_v2/
 ### Download a Complete Album
 ```bash
 # Download The Beatles - Abbey Road
-python src/extractor/spotify.py "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN" \
+python src/cratedigger/spotify.py "https://open.spotify.com/album/0ETFjACtuP2ADo6LFhL6HN" \
   -t ~/Music/Beatles \
   -w 45
 ```
@@ -171,7 +171,7 @@ python src/extractor/spotify.py "https://open.spotify.com/album/0ETFjACtuP2ADo6L
 ### Download Multiple Playlists with Rate Limiting
 ```bash
 # For large playlists, use longer wait times to avoid rate limits
-python src/extractor/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" \
+python src/cratedigger/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9COmYvdajy" \
   -w 60 \
   --flat-structure
 ```
@@ -179,7 +179,7 @@ python src/extractor/spotify.py "https://open.spotify.com/playlist/37i9dQZEVXcQ9
 ### Convert Existing Files Only
 ```bash
 # If you have OGG files that need conversion to MP3
-python src/extractor/spotify.py "dummy_url" \
+python src/cratedigger/spotify.py "dummy_url" \
   --skip-download \
   -t ~/Music/ExistingFiles
 ```
@@ -187,7 +187,7 @@ python src/extractor/spotify.py "dummy_url" \
 ### Create a Music Library
 ```bash
 # Keep files in Zotify's location AND copy to target
-python src/extractor/spotify.py "https://open.spotify.com/album/ALBUM_ID" \
+python src/cratedigger/spotify.py "https://open.spotify.com/album/ALBUM_ID" \
   --keep-library \
   -t ~/Music/MyCollection
 ```
@@ -246,7 +246,7 @@ Download successful. Processing...
 **"Audio key error" or Rate Limiting**
 ```bash
 # Increase wait time and try again
-python src/extractor/spotify.py "SPOTIFY_URL" -w 90
+python src/cratedigger/spotify.py "SPOTIFY_URL" -w 90
 ```
 
 **Authentication Errors**
@@ -273,7 +273,7 @@ sudo apt install ffmpeg  # Linux
 
 Enable detailed output:
 ```bash
-python src/extractor/spotify.py "SPOTIFY_URL" --show-lyrics-errors
+python src/cratedigger/spotify.py "SPOTIFY_URL" --show-lyrics-errors
 ```
 
 ## File Locations
@@ -304,7 +304,7 @@ albums=(
 )
 
 for album in "${albums[@]}"; do
-  python src/extractor/spotify.py "$album" -w 90 -t ~/Music/Collection
+  python src/cratedigger/spotify.py "$album" -w 90 -t ~/Music/Collection
   sleep 300  # 5-minute break between albums
 done
 ```
