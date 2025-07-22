@@ -58,13 +58,18 @@ def copy_audio_files(source_dir: str, target_dir: str, extension: str = ".mp3") 
 
     Files will be flattened (no subdirectory structure preserved).
 
-    Args:
-        source_dir: Directory to search for audio files recursively
-        target_dir: Directory to copy files to (will be created if it doesn't exist)
-        extension: File extension to search for (default: ".mp3")
+    Parameters
+    ----------
+    source_dir : str
+        Directory to search for audio files recursively
+    target_dir : str
+        Directory to copy files to (will be created if it doesn't exist)
+    extension : str, optional
+        File extension to search for (default: ".mp3")
 
     Returns
     -------
+    int
         Number of files copied
     """
     # Create target directory if it doesn't exist
