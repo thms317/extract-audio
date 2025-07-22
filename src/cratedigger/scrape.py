@@ -74,7 +74,12 @@ def find_mp3_urls_from_archive(archive_url: str) -> list[str]:
         return []
 
 
-def construct_wayback_url(url: str, archive_url: str, timestamp: str, type_prefix: str) -> str:
+def construct_wayback_url(
+    url: str,
+    archive_url: str,
+    timestamp: str | None,
+    type_prefix: str,
+) -> str:
     """Construct a Wayback Machine URL, avoiding double prefixes."""
     if not timestamp:
         return url  # Return original URL if timestamp is missing
