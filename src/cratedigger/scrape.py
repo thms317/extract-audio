@@ -12,16 +12,18 @@ from bs4 import BeautifulSoup
 
 
 def find_mp3_urls_from_archive(archive_url: str) -> list[str]:
-    """
-    Find and list potential MP3 URLs within an archived webpage from the Wayback Machine.
+    """Find and list potential MP3 URLs within an archived webpage from the Wayback Machine.
 
     Attempts to construct working Wayback Machine URLs, avoiding double prefixes.
 
-    Args:
-        archive_url: The URL of the archived webpage on the Wayback Machine.
+    Parameters
+    ----------
+    archive_url : str
+        The URL of the archived webpage on the Wayback Machine.
 
     Returns
     -------
+    list[str]
         A list of unique MP3 URLs found on the page, adjusted for Wayback Machine.
     """
     try:
@@ -103,27 +105,36 @@ def download_mp3(  # noqa: C901, PLR0912, PLR0913
     delay_between_retries: int = 5,
     force_download: bool = False,
 ) -> tuple[bool, str, None] | tuple[bool, None, str]:
-    """
-    Download an MP3 file from the given URL and save it to the specified destination.
+    """Download an MP3 file from the given URL and save it to the specified destination.
 
     Attempts to construct working Wayback Machine URLs, avoiding double prefixes.
-
     Includes retry logic with exponential backoff for handling connection issues.
 
-    Args:
-        url: The URL of the MP3 file to download
-        destination_dir: Directory where the MP3 file will be saved
-        filename: Optional custom filename, if None, extracts filename from URL
-        max_retries: Maximum number of retry attempts
-        delay_between_retries: Base delay between retries in seconds
-        force_download: If True, will download even if file exists
+    Parameters
+    ----------
+    url : str
+        The URL of the MP3 file to download
+    destination_dir : str
+        Directory where the MP3 file will be saved
+    filename : str | None, optional
+        Optional custom filename, if None, extracts filename from URL
+    max_retries : int, optional
+        Maximum number of retry attempts (default: 3)
+    delay_between_retries : int, optional
+        Base delay between retries in seconds (default: 5)
+    force_download : bool, optional
+        If True, will download even if file exists (default: False)
 
     Returns
     -------
+    tuple[bool, str, None] | tuple[bool, None, str]
         Tuple (success, filepath, error_message)
-        success: Boolean indicating whether download was successful
-        filepath: Path where the file was saved (None if failed)
-        error_message: Description of error (None if successful)
+        success : bool
+            Boolean indicating whether download was successful
+        filepath : str | None
+            Path where the file was saved (None if failed)
+        error_message : str | None
+            Description of error (None if successful)
     """
     # Create destination directory if it doesn't exist
     Path(destination_dir).mkdir(parents=True, exist_ok=True)
